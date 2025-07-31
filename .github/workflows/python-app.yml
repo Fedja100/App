@@ -1,10 +1,13 @@
-name: Build Android APK with p4a
+name: Build Android APK with p4a (Fully Automated)
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -48,6 +51,9 @@ jobs:
 
     - name: Clone python-for-android
       run: git clone https://github.com/kivy/python-for-android
+
+    - name: Make toolchain.py executable
+      run: chmod +x python-for-android/toolchain.py
 
     - name: Build APK with p4a
       run: |

@@ -1,13 +1,10 @@
-name: Build Android APK
+name: Build Android APK with p4a
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
-permissions:
-  contents: read
 
 jobs:
   build:
@@ -25,14 +22,13 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install cython==0.29.36
-        pip install buildozer==1.5.0  # Укажите конкретную версию Buildozer
-        pip install kivy kivymd
+        pip install kivy
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       with:
         api-level: 36
-        components: "platforms;android-36,build-tools;34.0.0,platform-tools" # Убедитесь, что версия build-tools актуальна
+        components: "platforms;android-36,build-tools;34.0.0,platform-tools"
 
     - name: Set ANDROID_HOME environment variable
       run: echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
@@ -40,22 +36,33 @@ jobs:
     - name: Add Android SDK tools to the PATH
       run: |
         echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
-        echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH # Убедитесь, что версия build-tools соответствует установленной
-        echo "$ANDROID_HOME/tools" >> $GITHUB_PATH # Добавляем tools (если нужно)
-        echo "$ANDROID_HOME/tools/bin" >> $GITHUB_PATH # Добавляем tools/bin (если нужно)
+        echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
 
     - name: Accept Android SDK Licenses
       run: yes | sdkmanager --licenses || true
 
-    - name: Update apt and install dependencies
+    - name: Install p4a dependencies
       run: |
         sudo apt-get update -y
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libffi-dev
 
-    - name: Change ownership of .buildozer and bin directories
-      run: |
-        sudo chown -R $USER:$USER .buildozer
-        sudo chown -R $USER:$USER bin
+    - name: Clone python-for-android
+      run: git clone https://github.com/kivy/python-for-android
 
-    - name: Buildozer Build (as runner)
-      run: buildozer android debug
+    - name: Build APK with p4a
+      run: |
+        cd python-for-android
+        ./toolchain.py create \
+          --name MyApp \
+          --package org.example.myapp \
+          --version 1.0 \
+          --requirements kivy,requests \
+          --arch armeabi-v7a \
+          --sdk-dir "$ANDROID_HOME" \
+          --ndk-dir "$ANDROID_NDK_HOME"
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: android-app
+        path: python-for-android/bin/*.apk

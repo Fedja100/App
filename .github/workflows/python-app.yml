@@ -52,7 +52,10 @@ jobs:
         sudo apt-get update -y
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libffi-dev
 
-    - name: Buildozer Build (with sudo and dynamic path)
+    - name: Change ownership of .buildozer and bin directories
       run: |
-        BUILDZER_PATH=$(which buildozer)
-        sudo "$BUILDZER_PATH" android debug
+        sudo chown -R $USER:$USER .buildozer
+        sudo chown -R $USER:$USER bin
+
+    - name: Buildozer Build (as runner)
+      run: buildozer android debug

@@ -52,20 +52,12 @@ jobs:
         sudo apt-get update -y
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libffi-dev
 
-    - name: Buildozer Build (initial - to create .buildozer)
-      run: buildozer android clean  # Запускаем buildozer, чтобы создать .buildozer
-
-    - name: Set permissions for .buildozer directory
+    - name: Set permissions for the entire repository
       run: |
-        chmod -R 777 .buildozer
+        chmod -R 777 .
 
-    - name: Clean Buildozer cache and directories (after permissions)
-      run: |
-        rm -rf .buildozer
-        rm -rf bin
-
-    - name: Buildozer Build (final)
-      run: buildozer android debug
+    - name: Buildozer Build (with sudo)
+      run: sudo buildozer android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4

@@ -34,7 +34,7 @@ jobs:
       run: |
         sudo apt-get update -y
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libffi-dev
-        buildozer init
+        # buildozer init  <--- УДАЛИТЬ ЭТУ СТРОКУ
         buildozer android debug
 
     - name: Upload APK

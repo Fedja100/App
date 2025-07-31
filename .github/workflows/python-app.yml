@@ -30,16 +30,32 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       with:
-        api-level: 36  # Укажите целевой API Level
-        components: "platform-tools,platforms;android-36,build-tools;34.0.0" # Добавляем platform-tools и build-tools
-        #platform: android-36 # Замените на актуальный android api
+        api-level: 36
+        components: "platforms;android-36,build-tools;34.0.0,platform-tools" # Убедитесь, что версия build-tools актуальна
 
-    - name: Buildozer Build
+    - name: Set ANDROID_HOME environment variable
+      run: echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+
+    - name: Add Android SDK tools to the PATH
+      run: |
+        echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+        echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH # Убедитесь, что версия build-tools соответствует установленной
+        echo "$ANDROID_HOME/tools" >> $GITHUB_PATH # Добавляем tools (если нужно)
+        echo "$ANDROID_HOME/tools/bin" >> $GITHUB_PATH # Добавляем tools/bin (если нужно)
+
+    - name: Accept Android SDK Licenses
+      run: yes | sdkmanager --licenses || true
+
+    - name: Clean Buildozer cache
+      run: buildozer android clean
+
+    - name: Update apt and install dependencies
       run: |
         sudo apt-get update -y
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libffi-dev
-        yes | sdkmanager --licenses || true
-        buildozer android debug
+
+    - name: Buildozer Build
+      run: buildozer android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4

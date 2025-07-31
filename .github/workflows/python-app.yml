@@ -52,15 +52,7 @@ jobs:
         sudo apt-get update -y
         sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libffi-dev
 
-    - name: Set permissions for the entire repository
+    - name: Buildozer Build (with sudo and dynamic path)
       run: |
-        chmod -R 777 .
-
-    - name: Buildozer Build (with sudo)
-      run: sudo buildozer android debug
-
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: android-app
-        path: bin/*debug.apk
+        BUILDZER_PATH=$(which buildozer)
+        sudo "$BUILDZER_PATH" android debug

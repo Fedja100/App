@@ -19,11 +19,11 @@ jobs:
 
     - name: Configure Squid (VERY BASIC - DO NOT USE AS IS)
       run: |
-        sudo echo "http_port 3128" >> /etc/squid/squid.conf
-        sudo echo "https_port 3129 cert=/etc/squid/ssl_cert.pem" >> /etc/squid/squid.conf
-        sudo echo "http_access allow all" >> /etc/squid/squid.conf
-        sudo echo "http_access allow CONNECT all" >> /etc/squid/squid.conf
-        sudo echo "always_direct allow all" >> /etc/squid/squid.conf # VERY INSECURE, remove in production
+        echo "http_port 3128" | sudo tee -a /etc/squid/squid.conf
+        echo "https_port 3129 cert=/etc/squid/ssl_cert.pem" | sudo tee -a /etc/squid/squid.conf
+        echo "http_access allow all" | sudo tee -a /etc/squid/squid.conf
+        echo "http_access allow CONNECT all" | sudo tee -a /etc/squid/squid.conf
+        echo "always_direct allow all" | sudo tee -a /etc/squid/squid.conf # VERY INSECURE, remove in production
         sudo systemctl restart squid
 
     - name: Get Public IP

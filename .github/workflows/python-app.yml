@@ -1,74 +1,33 @@
-name: Build Android APK with p4a (Fully Automated)
+name: Deploy Squid Proxy (DO NOT USE FOR PRODUCTION)
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-permissions:
-  contents: read
+  workflow_dispatch:  # Trigger manually for testing
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install cython==0.29.36
-        pip install kivy
-
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      with:
-        api-level: 36
-        components: "platforms;android-36,build-tools;34.0.0,platform-tools"
-
-    - name: Set ANDROID_HOME environment variable
-      run: echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-
-    - name: Add Android SDK tools to the PATH
-      run: |
-        echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
-        echo "$ANDROID_HOME/build-tools/34.0.0" >> $GITHUB_PATH
-
-    - name: Accept Android SDK Licenses
-      run: yes | sdkmanager --licenses || true
-
-    - name: Install p4a dependencies
+    - name: Update apt-get and install Squid
       run: |
         sudo apt-get update -y
-        sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libffi-dev
+        sudo apt-get install -y squid openssl
 
-    - name: Clone python-for-android
-      run: git clone https://github.com/kivy/python-for-android
-
-    - name: Make toolchain.py executable
-      run: chmod +x python-for-android/toolchain.py
-
-    - name: Build APK with p4a
+    - name: Generate SSL Certificate (Self-Signed - INSECURE)
       run: |
-        cd python-for-android
-        ./toolchain.py create \
-          --name MyApp \
-          --package org.example.myapp \
-          --version 1.0 \
-          --requirements kivy,requests \
-          --arch armeabi-v7a \
-          --sdk-dir "$ANDROID_HOME" \
-          --ndk-dir "$ANDROID_NDK_HOME"
+        sudo openssl req -new -x509 -days 365 -nodes -keyout /etc/squid/ssl_cert.pem -out /etc/squid/ssl_cert.pem -subj "/CN=MySquidProxy"
 
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: android-app
-        path: python-for-android/bin/*.apk
+    - name: Configure Squid (VERY BASIC - DO NOT USE AS IS)
+      run: |
+        sudo echo "http_port 3128" >> /etc/squid/squid.conf
+        sudo echo "https_port 3129 cert=/etc/squid/ssl_cert.pem" >> /etc/squid/squid.conf
+        sudo echo "http_access allow all" >> /etc/squid/squid.conf
+        sudo echo "http_access allow CONNECT all" >> /etc/squid/squid.conf
+        sudo echo "always_direct allow all" >> /etc/squid/squid.conf # VERY INSECURE, remove in production
+        sudo systemctl restart squid
+
+    - name: Get Public IP
+      run: |
+        PUBLIC_IP=$(curl ifconfig.me)
+        echo "Squid HTTP Proxy IP: $PUBLIC_IP:3128"
+        echo "Squid HTTPS Proxy IP: $PUBLIC_IP:3129"
